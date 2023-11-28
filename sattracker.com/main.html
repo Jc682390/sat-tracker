@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<title>Live Starlink Satellite and Coverage Map</title>
+<link type="text/css" rel="stylesheet" href="css/all2.css?8">
+<meta charset="utf-8">
+<meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<meta name="description" content="Live view of Starlink internet satellites and coverage.">
+<meta property="og:title" content="Starlink satellite tracker">
+<meta property="og:site_name" content="Starlink satellite tracker">
+<meta property="og:url" content="https://satellitemap.space">
+<meta property="og:description" content="Live view of SpaceX starlink satellite constellation and coverage.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://satellitemap.space/android-chrome-512x512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=1">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=1">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=1">
+<link rel="manifest" href="/site.webmanifest?v=1">
+<link rel="mask-icon" href="/safari-pinned-tab.svg?v=1" color="#5bbad5">
+<link rel="shortcut icon" href="/favicon.ico?v=1">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#222">
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#000"/>
+<link href="/splashscreens/iphone6_splash.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" >
+<link href="/splashscreens/iphoneplus_splash.png" media="(device-width: 621px) and (device-height: 1104px) and (-webkit-device-pixel-ratio: 3)" rel="apple-touch-startup-image" >
+<link href="/splashscreens/iphonex_splash.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" rel="apple-touch-startup-image" >
+<link href="/splashscreens/iphonexr_splash.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" >
+<link href="/splashscreens/iphonexsmax_splash.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" rel="apple-touch-startup-image" >
+<link href="/splashscreens/ipad_splash.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" >
+<link href="/splashscreens/ipadpro1_splash.png" media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" >
+<link href="/splashscreens/ipadpro3_splash.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" >
+<link href="/splashscreens/ipadpro2_splash.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" >
+<!-- <script type='text/javascript' src="js/lib/d3.v3.min.js" defer></script>  -->
+<script type='text/javascript' src="js/lib/topojson.v1.min.js"></script>
+<script type='text/javascript' src='js/lib/bundle3.js?2'></script>
+<!-- <script type='text/javascript' src='js/lib/geodesy.min.js'></script> -->
+</head>
+<body>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js')
+	.then((registration)=>{
+	    //console.log('Service Worker is registered' );
+	})
+	.catch(err=>{
+	    console.error('error in sw registration', err);
+	})
+  });
+}
+</script>
+<div id='loading_spinner'>
+	<!-- <div id='center_spinner' class="dot-revolution"></div> -->
+</div>
+<div id='latency'>
+</div>
+<div id="msearch" style="top: 50px;"><a href="#" aria-label="Search" class=""><i data-click="msearch" class="search icon" style="margin:0; text-decoration:none"></i>
+<input class="autocomplete" style="display:none" id="mautocomplete" placeholder="type help for tips">
+</a></div>
+<div id="myDiv1" style='border:1px solid #fff; display:none; position:fixed; top: 2.5vw; left:2.5vw; width:95vw; height:600px; z-index:999'>
+<div class="c-button c-button-vsm" style="position:absolute; z-index:999; right:5px; top: 2px;" onclick="document.getElementById('myDiv1').style.display='none'; return false">X</div>
+</div>
+<div id="hoverinfo" style="margin-left:80px; display:none"></div>
+  <div id='pageheader' class='ui fixed inverted large menu main-menu'>
+  <div class='items' style='max-width:1200px'>
+    <span class='item'><i class='globe icon'></i></span>
+    <span id='grouplabel' class='item minor active show-on-mobile'>starlink</span>
+    <span class='hide-on-mobile'>
+	    <a href='/?constellation=starlink' aria-label="Starlink" id='navl1' class="item minor">Starlink</a>
+    </span>
+    <span class='hide-on-mobile'>
+	    <a href='/?constellation=oneweb' aria-label="Oneweb" id='navl2' class="item minor">Oneweb</a>
+    </span>
+    <span class='hide-on-mobile'>
+	    <a href='/?constellation=GPS' aria-label="GPS" id='navl3' class="item minor">GPS</a>
+    </span>
+    <a href='#' aria-label="Home"  class="item minor open-modal" data-open="goHome" ><!span class='item'><i class='home icon'></i><!/span></a>
+    <a href='#' aria-label="Settings"  class="item minor open-modal" data-open="modal2" ><!span class='item'><i class='settings icon'></i><!/span></a>
+    <a href='#' aria-label="More"  class="item minor open-modal" data-open="modal0" >&middot;&middot;&middot</a>
+    <a data-click="search" href='#' aria-label="Search"  class="item minor open-modal hide-on-mobile"><i _data-click="search" class='search icon'></i>
+    <input class='autocomplete' style='display:none' id='autocomplete' placeholder='type help for tips'>
+    </a>
+    <span class='spacer hide-on-mobile'></span>
+    <a aria-label="Account" class="item right" href="/app/u/account"><i class="user icon"></i></a>
+  </div>
+</div>
+<div id="autocomplete_result" style="display: none;"></div>
+
+<div id='showing_on'>
+<!-- <h1 id='showing_on_h1'>[<a href='' onclick='return tog_showing();'>hide -</a>]</h1> -->
+<ul id='magnitudes'></ul>
+<!-- <ul id='grounds'>Ground stations:</ul> -->
+</div>
+<div id='showing_off'>
+<!-- <h1 id='showing_off_h1'>[<a href='' onclick='return tog_showing();'>show +</a>]</h1> -->
+</div>
+
+<canvas id='quakeCanvas'></canvas>
+
+<div class="modal" id="modal2">
+<div class="modal-dialog" style='background: #333; color: white;'>
+    <header class="modal-header">
+      <b>Settings</b>
+      <button class="c-button c-button-sm" class="close-modal" aria-label="close modal" data-close>
+        ✕  
+      </button>
+    </header>
+    <section class="modal-content" style='padding-top:0px'>
+	    <div style='line-height:2.0em; margin-top:0em;'><div onclick='cflip("c1"); return false' class='concertina ch-show' id='c1'>FILTER</div><div id='c1-content' class='concertina-show'>
+<label>Group<select name="group" id='settings.group' style='background-color:white; float:right; touch-action:manipulation'>
+    <option value="starlink">Starlink</option>
+    <option value="oneweb">Oneweb</option>
+    <option value="GPS">GPS</option>
+</select></label><br>
+<label>Launches<input id='settings.launch' type="text" size=10 style='background-color:white; float:right; font-size:14px; touch-action:manipulation'><small> (eg 1,2,33-35)</small></label><br>
+<label>Version<input id="settings.satver" type="text" size=10 style='background-color:white; float:right; font-size:14px; touch-action:manipulation'><small> (eg v0.9,v1.0)</small></label><br>
+			    <label>Show <select name="show" id='settings.show' style='float:right; background-color:white'> 
+    <option value="any">any</option>
+    <option value="declining">declining</option>
+    <option value="rising">rising</option>
+    <option value="stored">stored</option>
+    <option value="active">active</option>
+    <option value="faults">irregular</option>
+</select></label><br>
+<label>Orbits <span style='float:right'><input id='settings.of' type='text' size=3 style="background-color:white; font-size:1.0em"></input>° - <input id='settings.tf' type='text' size=3 style="background-color:white; font-size:1.0em"></input>°</span></label></div>
+  <div onclick='cflip("c2"); return false' class='concertina ch-hidden' id='c2'>DISPLAY</div><div id='c2-content' class='concertina-hidden'>
+	  <label>Globe Theme<select name="theme" id="settings.theme" style="float:right; background-color:white">
+<option value="dark">dark</option>
+<option value="lite">lite</option></select></label><br>
+	  <label>Day/Night<input type=checkbox name="redwhite" id="settings.redwhite" /><i></i></label><br>
+<!--     Rings: <input type=checkbox name="showrings" id="settings.showrings"> -->  
+<label>Coverage<input type=checkbox name="showcov" id="settings.showcov" /><i></i></label><br>
+<label>Intensity<input type=checkbox name="showintensity" id="settings.showintensity" /><i></i></label><br>
+<label>People<select name="show" id='settings.showpeeps' style="float:right; background-color:white">
+    <option value="no">No</option>
+    <option value="using">Using</option>
+    <option value="ordered">Ordered</option>
+    <option value="useorder">Using+Ordered</option>
+    <option value="want">Want</option>
+    <option value="all">all</option>
+</select></label><br>
+<label>Stations<input type=checkbox name="showgnd" id="settings.showgnd" /><i></i></label><br>
+<label>Projection<select name="projection" id='settings.projection' style="float:right; background-color:white">
+    <option value="orthographic">orthographic</option>
+    <option value="mercator">mercator</option>
+	</select></label><br>
+  </div><div onclick='cflip("c3"); return false' class='concertina ch-hidden' id='c3'>HOME</div><div id='c3-content' class='concertina-hidden'><label>Dishy faces<select name="dishyface" id="settings.dishyface" style="background-color:white; float:right; font-size:1.1em"><option value=""></option><option value="north">north</option><option value="up">up</option><option value="south">south</option></select></label><br>
+	  <label>Geolocation<span style='float:right'><a id='getlocn' href="#" onclick="get_location(); return false;" style="color:#aaf">attempt</a></span></label><br>
+	  <label>Latitude<span style='float:right'>(S -) <input id='settings.myloc0' type='text' size=8 style="background-color:white; font-size:1.0em"></input></span></label><br>
+	  <label>Longitude<span style='float:right'>(W -) <input id='settings.myloc1' type='text' size=8 style="background-color:white; font-size:1.0em"></input></span></label></div>
+  <center style="padding-top:0.8em"><button value="save" class="c-button" style="background-color:#44f; color: white;" onClick="save_settings(); close_modal(document.getElementById('modal2')); return false;">Save</button>&nbsp;&nbsp;<button class="c-button" value="reset" style="background-color:white; color:black;" onClick="reset_settings(); close_modal(document.getElementById('modal2')); window.location.reload(false); return false">Reset</button></center>
+    </section>
+    <!footer class="modal-footer">
+    <!/footer>
+  </div>
+</div>
+
+<div class="modal" id="modal0">
+  <div class="modal-dialog" style='background: #333; color: white;'>
+    <header class="modal-header">
+      <b>More Functions</b>
+      <button class="c-button c-button-sm close-modal" aria-label="close modal" data-close>
+        ✕  
+      </button>
+    </header>
+    <section class="modal-content" style='padding:unset'>
+
+<div style='line-height:2.0em; margin-top:0em;'><div onclick='cflip("f1"); return false' class='concertina ch-show' id='f1'>INFO</div><div id='f1-content' class='concertina-show'>
+    <ul style='margin:0px'>
+	    <li><a href='/starlink/launches.html'><i class='url icon'></i>Table of starlink launches</a></li>
+	    <li><a href='/satellites.html'><i class='url icon'></i>Table of starlink satellites</a></li>
+      <li><a href='/conjunctions.html'><i class='url icon'></i>Conjunctions forecast</a></li>
+      <li><a href='/app/groundstations/starlink/all'><i class='map icon'></i>Ground stations</a></li>
+      <li><a href='#' class="open-modal" data-open="myDiv1" ><i class='globe icon'></i>Constellation Layout</a></li>
+      <li><a href='#' class="open-modal" data-open="myDiv2" ><i class='globe icon'></i>Status over time</a></li>
+      <li><a href='#' class="open-modal" data-open="visData" ><i class='download icon'></i>download data</a></li>
+    </ul>
+	</div>
+	<div onclick='cflip("f2"); return false' class='concertina ch-hidden' id='f2'>HELP</div><div id='f2-content' class='concertina-hidden'>
+    <ul style='margin:0px'>
+      <li><a href='#' class="open-modal" data-open="modal4" ><i class='apple icon'></i>Open in App</a></li>
+      <li><a href='/twitter.html'><i class='twitter icon'></i>Latest tweets</a></li>
+      <li><a href='#' class="open-modal" data-open="modal1" ><i class='key icon'></i>Map key</a></li>
+      <!-- <li><a href='#' class="open-modal" data-open="modal5" ><i class='android icon'></i>Android App tips</a></li> -->
+      <li><a href='/about.html'><i class='url icon'></i>About and Help</a></li>
+      <li><a href='/about.html#privacy'><i class='url icon'></i>Privacy Policy</a></li>
+    </ul></div>
+</div>
+	    </section>
+    <footer class="modal-footer">
+    </footer>
+  </div>
+</div>
+
+<div class="modal" id="modal4">
+  <div class="modal-dialog" style='background: white; color: black;'>
+    <header class="modal-header">
+      <b>Get the App</b>
+      <button class="c-button c-button-sm" aria-label="close modal" data-close>
+        ✕  
+      </button>
+    </header>
+    <section class="modal-content" style='padding-top:0px; margin:1em'>
+<div class="applink-badges" style='display:flex' data-v-37ee7efd="">
+<a target="_blank" class="apple-appstore-link" href="https://apps.apple.com/app/satellitemap-space/id1598264303" data-v-37ee7efd="">
+	<div class='apple-app-store'></div>
+</a>
+<!-- https://play.google.com/store/apps/details?id=space.satellitemap.app -->
+<a target="_blank" class="google-play-link" href="http://play.google.com/store/apps/details?id=starlink.satellitemap.app" data-v-37ee7efd=""><img src="/files/google_play.a06d35015e3473245a5c81af336224f9.png" loading="lazy" alt="Get it on Google Play" title="Get it on Google Play" width=134 data-v-37ee7efd=""></a></div>
+      <p style='margin:1em'>
+      NEW: The app is now on the google play store, at a low fixed price. It is not a freemium, subscription or ad-supported app</p>
+      </p>
+      <p style='margin:1em'>
+      The app is now on the app store, at a low fixed price. It is not freemium, by subscription or ad-supported.<br>
+      </p>
+      <p style='margin:1em'>
+      Buy (and review) the app to support more development.
+      </p>
+    </section>
+    <footer class="modal-footer">
+    </footer>
+  </div>
+</div>
+
+<div class="modal" id="modal5">
+  <div class="modal-dialog" style='background: white; color: black;'>
+    <header class="modal-header">
+      <b>IOS and Android App Tips</b>
+      <button class="c-button c-button-sm" aria-label="close modal" data-close>
+	      x
+      </button>
+    </header>
+    <section class="modal-content" style='padding-top:0px'>
+      <p style='margin:1em'>
+      Thank you for testing the app.<br><br>Slower/older android phones will barely handle the globe displaying anything more than just satellite dots, and Sky View frame rate will also be slow.<br><br>Toggle Scope off to lower CPU use. Turn off ground stations and all other map features. Android compass can be unreliable! If, in google maps, the direction the phone is facing is moving around by itself, or if in Sky View the break in the white ring is not true North, then position accuracy will be poor. Try moving your phone in a figure of 8 motion to help Android re-calibrate the compass.</p>
+      <p style='margin:1em'>
+      Please also check IOS Settings &rarr; Privacy &rarr; Location Services &rarr; (scroll down to end) System Services &rarr; Compass Calibration is set to ON.
+      </p>
+    </section>
+    <footer class="modal-footer">
+    </footer>
+  </div>
+</div>
+
+<div class="modal" id="modal6">
+  <div class="modal-dialog">
+    <header class="modal-header">
+      <b>Search Help</b>
+      <button class="c-button c-button-sm" aria-label="close modal" data-close>
+	      x
+      </button>
+    </header>
+    <section class="modal-content" style='padding-top:0px'>
+      <p style='margin:1em'>
+      Incremental search <b>of currently filtered sats</b> by <ol><li>NORAD numbers (ex. 48140)</li><li>labels (ex. STARLINK 1028)</li><li>ground station town/state names (ex. AK)</li><li>re-entries (ex. re-)</li><li>Launches (ex. Launch..)</li><li>Space stations (ex. ISS or CSS)</li><li>Missions (ex. Mission L10)</li></ol>Click a result, or push enter for the first match</p>
+    </section>
+  </div>
+</div>
+
+<div class="modal" id="modal1">
+<div class="modal-dialog">
+    <header class="modal-header">
+      <b>Map Key</b>
+      <button class="c-button c-button-sm" aria-label="close modal" data-close>
+        ✕  
+      </button>
+    </header>
+    <section class="modal-content" style='padding:0 1em'>
+      <p style='margin-top:0px'>
+<i class='rss icon'></i> : ground station (planned or in operation).<br>
+	<!--	<br>Circles are ground radio visibility at &gt;=45 degree elevation above horizon</p> -->
+      <p>Green Hexes : possible coverage area based on ground stations known/planned</p>
+      <p>Showing 'People' : green hex has claimed user(s), yellow has claimed pre-orders, red has claimed interest</p>
+      <p>Green <i class='circle icon'></i>: your home lat/long (settings)</p>
+      <p>Green <i class='user icon'></i>: ISS or CSS</p>
+      <p>Red lines : possible home-sat link (assuming dish facing as per settings)</p>
+      <p>Click on sat: altitude history in window and sat chains.</p><p>Click on ground station : google/apple map view</p>
+	<p><i class='download icon'></i>: if home is set, and some time has passed viewing nearby satellites this link (in "...")  will dump data to a CSV that you may be able to use for your own visibility calculations</p>
+    </section>
+    <footer class="modal-footer">
+      
+    </footer>
+  </div>
+</div>
+
+<div class="modal" id="modal3">
+  <div class="modal-dialog" style='background: white; color: black;'>
+    <header class="modal-header">
+      <span id='modal3-title'></span>
+      <button class="c-button c-button-sm close-modal" aria-label="close modal" data-close>
+        ✕  
+      </button>
+    </header>
+    <section class="modal-content" style='padding-top:0px'>
+     <div class="dont-break-out" style='overflow-y:scroll; max-width:350px; padding:0em 1em 0.5em 1em' id='modal3-content'>
+     </div>
+    <footer class="modal-footer">
+    </footer>
+  </div>
+</div>
+<div style='height:95vh'>
+<div id='footer' style='z-index:99; font-size: 0.95em'>
+	<font color='#f88'>not affiliated with<br>spaceX or starlink</font> &middot; 
+</div>
+</div>
+
+<div id="myDiv" style='display:none; position:fixed; bottom: 6px; right:6px; width:350px; height:150px; z-index:999'></div>
+<!--
+<div id='fab2' class='fab2-wrapper' style='display:none'>
+	<a href='#' aria-label="Home"  class="open-modal" data-open="goHome" ><i class='home icon'></i></a><br>
+</div>-->
+
+<div id='fab' style='opacity: 0.8' class="fab-wrapper">
+  <input onclick='pulse("fabCheckbox","pulse-blue")' id="fabCheckbox" type="checkbox" class="fab-checkbox" />
+  <label class="fab" for="fabCheckbox">
+    <span class="fab-dots fab-dots-2">+</span>
+  </label>
+  <div class="fab-wheel">
+    <a href='/app/groundstation' class="fab-action fab-action-1">+<i class="rss icon"></i><i class="fas fa-question"></i> </a>
+    <a id='pulse-blue' href='/app/pin' class="fab-action fab-action-2">+<i class="home icon"></i><i class="fas fa-book"></i> </a>
+    <a href='/app/feedback' class="fab-action fab-action-3">+<i class="bug icon"></i><i class="fas fa-address-book"></i> </a>
+  </div>
+</div>
+
+<div id='fab2' style='display:none; opacity: 0.8' class="fab-wrapper fab-wrapper-left">
+  <input onclick='pulse("fabCheckbox1","pulse-blue1")' id="fabCheckbox1" type="checkbox" class="fab-checkbox fab-checkbox-left" />
+  <label class="fab fab-left" for="fabCheckbox1">
+    <span class="fab-dots fab-dots-left">*</span>
+  </label>
+  <div class="fab-wheel fab-wheel-left">
+	  <a href='#' data-open='goHome' class="fab-action fab-action-1-left"><i class="home icon"></i></a>
+	  <a href='/app/u/account' class="fab-action fab-action-2-left"><i class="user icon"></i></a>
+    <!-- <a href='/app/feedback' class="fab-action fab-action-3-left"><i class="home icon"></i><i class="fas fa-address-book"></i> </a> -->
+  </div>
+</div>
+<div class="overlay-container">
+<section id="open-in-app" class="section overlay-open-in-app-button with-animation visible" data-v-73ae9767="">
+	<button class="base-button square open-in-app-button" type="" data-v-529dec3e="" data-v-2aa007ee=""><span id='open-in-app-label'>Open in app</span><span class="base-icon" data-v-23f54a12="" data-v-2aa007ee=""><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30.4 30.4"><g class="st0"><path class="st1" d="M28.6.3L15.2 13.7 1.8.3.4 1.7l13.4 13.4L.3 28.7l1.4 1.4 13.5-13.5 13.5 13.5 1.4-1.4-13.5-13.6L30 1.7z"></path></g><path class="st2" d="M30.1 28.7L16.6 15.2 30 1.8c.4-.4.4-1 0-1.4-.4-.4-1-.4-1.4 0L15.2 13.8 1.8.3C1.4-.1.8-.1.4.3c-.4.4-.4 1 0 1.4l13.4 13.5L.3 28.7c-.4.4-.4 1 0 1.4.2.2.5.3.7.3.2 0 .5-.1.7-.3l13.5-13.5 13.5 13.5c.2.2.5.3.7.3.2 0 .5-.1.7-.3.4-.4.4-1 0-1.4z"></path></svg></span><!--v-if-->
+	</button>
+</section>
+</div>
+<div onclick='graphStatus(); return false;' id='status-container' class="status-container" style='display:none; cursor:pointer'></div>
+
+<script>
+
+// --
+var s = window.localStorage.getItem('settings');
+var settings = null;
+if (s) {
+	try {
+		settings = JSON.parse(s);
+	} catch(exception) {
+		s = null;
+	}
+}
+if (!s)
+	reset_settings();
+
+_p2settings();
+
+if (typeof(window.ScopeView) == 'object') {
+	settings.scopemode = true;
+	document.getElementById('footer').style.display='none';
+	document.getElementById('pageheader').style.display='none';
+	document.getElementById('quakeCanvas').style.top='0px';
+	document.body.style.background = 'unset';
+	document.body.style.backgroundColor = '#000';
+
+	settings.group = 'starlink';
+	settings.showintensity = false;
+	settings.showrings = false;
+	settings.showpeeps = "no";
+	settings.showgnd = false;
+	settings.showcov = false;
+	settings.theme = 'dark';
+	settings.show = 'any';
+	settings.myloc[0] = settings.myloc[1] = 0;
+	//if (!mylocok()) {
+	//	myalert("Please set home location in Settings");
+	//}
+} 
+
+if (!('redwhite' in settings)) 
+	settings.redwhite = true;
+//if (!('showrings' in settings))
+	settings.showrings = false;
+if (!('group' in settings))
+	settings.group = 'starlink';
+if (!('showcov' in settings))
+	settings.showcov = true;
+if (!('showintensity' in settings))
+	settings.showintensity = false;
+if (!('showpeeps' in settings))
+	settings.showpeeps = "no";
+if (!('showgnd' in settings))
+	settings.showgnd = true;
+if (!('of' in settings))
+	settings.of = '';
+if (!('theme' in settings))
+	settings.theme = 'dark';
+if (!('tf' in settings))
+	settings.tf = '';
+if (!('dishyface' in settings))
+	settings.dishyface = '';
+if (settings.launch == 'any')
+	settings.launch = 'all';
+if (settings.show == 'all') {
+	settings.show = 'any';
+}
+if (typeof(settings.launch) == 'object') {
+	settings.launch = 'all';
+}
+if (typeof(settings.myloc) != 'object') {
+	settings.myloc = new Array();
+}
+if (typeof(settings.showpeeps) != 'string') {
+	settings.showpeeps = "no";
+}
+if (settings.group != 'starlink') {
+	var disable = ['settings.satver', 'settings.launch', 'settings.show', 'settings.showcov',
+			'settings.showintensity', 'settings.showgnd',
+			'settings.showpeeps', 'settings.dishyface'];
+
+	for(var x=0; x<disable.length; x++) {
+		document.getElementById(disable[x]).disabled = true;
+	}
+
+}
+
+var ppp = null;
+var ppp_ct = 0;
+var lb = null;
+var visProp = null;
+var tips = null;
+
+const openEls = document.querySelectorAll("[data-open]");
+const closeEls = document.querySelectorAll("[data-close]");
+const clickEls = document.querySelectorAll("[data-click]");
+const isVisible = "is-visible";
+
+bootup();
+
+var boot = setInterval(function() {
+	if (ppp_ct++ == 200) {
+		alert("Something went wrong during set up");
+	}
+	if (ppp) {
+
+		if (typeof(window.StackView) == 'object') {
+			ppp.appswitch = function(item) {
+				console.log("appswitch "+item);
+
+				if (item == 'settings')
+					modal_toggle('modal2');
+				if (item == 'more')
+					modal_toggle('modal0');
+				if (item == 'gohome')
+					proc_event('goHome');
+			}
+			setInterval(function() {
+				StackView.postMessage('iamalive');
+			}, 5000);
+		}
+
+		ppp.setProjection(settings.projection);
+		ppp.setSettings(settings);
+		clearTimeout(boot);
+
+		// TODO: android this is too high
+		// document.getElementById('latency').style.top='calc(env(safe-area-inset-top))';
+		document.getElementById('latency').style.top='50px';
+
+		dostatus();
+		dolatency();
+		doutc();
+	}
+}, 100);
+
+function bootup() {
+
+	for (const el of clickEls) {
+	  el.addEventListener("click", function(e) {
+	     if (e.target.id != 'autocomplete') 
+		proc_click(this.dataset.click);
+	  });
+	}
+
+	for (const el of openEls) {
+	  el.addEventListener("click", function() {
+	    const modalId = this.dataset.open;
+	    proc_event(modalId);
+	  });
+	}
+
+
+	if (typeof(window.StackView) == 'object')
+		document.getElementById("open-in-app-label").innerHTML = 'App Tips';
+
+	var oia_t = setTimeout(function() {
+		document.getElementById("open-in-app").style.display='none';
+	}, 10000);
+
+	document.querySelectorAll("[data-v-23f54a12]")[0].addEventListener("click", function(e) {
+		e.stopPropagation(); 
+		document.getElementById("open-in-app").style.display='none';
+	});
+	document.querySelectorAll("[data-v-529dec3e]")[0].addEventListener("click", function() {
+		clearTimeout(oia_t);
+		modal_toggle('modal4');	
+	});
+
+	for (const el of closeEls) {
+	  el.addEventListener("click", function() {
+	    this.parentElement.parentElement.classList.remove(isVisible);
+	    this.parentElement.parentElement.parentElement.classList.remove(isVisible);
+	  });
+	}
+
+	document.addEventListener("click", e => {
+	  if (e.target == document.querySelector(".modal.is-visible")) {
+	    document.querySelector(".modal.is-visible").classList.remove(isVisible);
+	  }
+	});
+
+	// if we press the ESC
+	document.addEventListener("keyup", e => {
+	  if (e.key == "Escape" && document.querySelector(".modal.is-visible")) {
+	    document.querySelector(".modal.is-visible").classList.remove(isVisible);
+	  }
+	});
+
+	// disable touch move/zoom events to canvas but not to other items
+	function preventBehavior(e) {
+		if (e.target.id == 'quakeCanvas')
+		    e.preventDefault(); 
+	}
+
+	document.addEventListener("touchmove", preventBehavior, {passive: false});
+
+	// refresh data on vis change if necessary
+	visProp = getHiddenProp();
+
+	if (visProp) {
+	  var evtname = visProp.replace(/[H|h]idden/,'') + 'visibilitychange';
+	  document.addEventListener(evtname, visChange);
+	}
+
+	if (typeof(window.StackView) == 'object') {
+		document.getElementById('ar').style.display="unset";
+		document.getElementById('loading_spinner').style.display='block';
+		document.getElementById('footer').style.display='none';
+		// document.getElementById('fab').style.bottom='2rem';
+		document.getElementById('pageheader').style.display='none';
+		document.getElementById('fab2').style.display='';
+
+		var t1 = setInterval(function() {
+			if (typeof(Geodesic) == "object") {
+				document.getElementById('loading_spinner').style.display='none';
+				ppp.interacted = new Date().getTime()
+				clearTimeout(t1);
+			} 
+		}, 100);
+	}
+
+	var ns = document.createElement('script');
+	ns.setAttribute('src', 'js/planet.min.js?1650849714');
+	ns.setAttribute('id', 'quakejs');
+
+	if (settings.group == 'starlink') {
+		ns.setAttribute('data-satfile','/json/sl.json');
+		document.getElementById('grouplabel').innerHTML = 'Starlink';
+		document.getElementById('navl1').classList.add('active');
+	}
+	if (settings.group == 'oneweb') {
+		ns.setAttribute('data-satfile','/json/oneweb.json');
+		document.getElementById('grouplabel').innerHTML = 'Oneweb';
+		document.getElementById('navl2').classList.add('active');
+	}
+	if (settings.group == 'GPS') {
+		ns.setAttribute('data-satfile','/json/GPS.json');
+		document.getElementById('grouplabel').innerHTML = 'GPS';
+		document.getElementById('navl3').classList.add('active');
+	}
+	document.body.appendChild(ns);
+}
+
+</script>        
+<script type="text/javascript">
+document.write('<scr'+'ipt type="text/javascript" src="js/lib/planetaryjs.min.js?1650849714"></scr' + 'ipt>');
+</script>
+</body>
+</html>
